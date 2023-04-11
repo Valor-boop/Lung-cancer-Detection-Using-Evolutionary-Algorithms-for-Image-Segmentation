@@ -2,6 +2,17 @@ import numpy as np
 import matplotlib.pyplot as plt
 
 def depth_modification(image, depth):
+    """
+    Question 5.
+    The following function changes the depth of an inputed image represented by a numpy
+    array to the value represented by the "depth" parameter.
+
+    Parameters:
+        image (numpy array) : An array representing an image
+        depth (int) : A depth value the image will be changed to
+    Returns:
+        new_depth_image (numpy array) : The image altered to have the new depth value
+    """
     # Get max depth of image
     current_max = np.max(image)
     i = 1
@@ -15,6 +26,16 @@ def depth_modification(image, depth):
             new_depth_image[j][i] = new_intensity
     return new_depth_image
 
+def linear_filters(image, filter):
+    padding = len(filter) // 2
+    padded_image = np.pad(image, padding, mode='constant', constant_values=0)
+    filtered_image = np.copy(image)
+    for i in range(0, len(padded_image[0]) - padding - 1):
+        for j in range(0, len(padded_image) - padding - 1):
+            matrix_section = padded_image[j:j + len(filter), i:i + len(filter)]
+            matrix = np.multiply(matrix_section, filter)
+            filtered_image[j][i] = matrix.sum()
+    return filtered_image
 
 def pre_process(image, depth):
     # Assume the input matrix A
@@ -37,3 +58,5 @@ def pre_process(image, depth):
 
     image = depth_modification(image, depth)
     return image
+
+
