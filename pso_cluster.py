@@ -31,7 +31,7 @@ def fitness(image, thresholds):
     return fitness
 
 def pso(image, num_particles, num_iterations):
-    """
+    '''
     Performs Particle Swarm Optimization (PSO) to segment an image using a threshold.
 
     Args:
@@ -42,7 +42,7 @@ def pso(image, num_particles, num_iterations):
     Returns:
         segmented_image (numpy.ndarray): A 2D numpy array representing the segmented image, where the pixels with intensities
         greater than the threshold are set to 1 and the rest are set to 0.
-    """
+    '''
     # Set the search space for the threshold value
     search_space = (0, 255)
     
@@ -93,7 +93,7 @@ def pso(image, num_particles, num_iterations):
     return segmented_image
 
 def perform_cluster(ct_image):
-    """
+    '''
     Perform clustering on a CT image to extract the tumor.
     
     Args:
@@ -101,7 +101,7 @@ def perform_cluster(ct_image):
     
     Returns: 
         None
-    """
+    '''
     #ct_image = depth_modification(ct_image, 8)
     ct_image_int_8 = ct_image.astype(np.uint8)
     
