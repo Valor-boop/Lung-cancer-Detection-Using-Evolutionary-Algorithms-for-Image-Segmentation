@@ -1,9 +1,17 @@
+####################################################################################
+#   CISC455 Group 4
+#   Lung cancer Detection Using Evolutionary Algorithms for Image Segmentation
+#   Names: Patrick Bernhard, Pavel-Dumitru Cernelev, Ben Tomkinson
+#   Date: 4/11/2023
+#####################################################################################
 from kmeans_cluster import kmeans_segmentation
 from pso_cluster import perform_cluster
 import numpy as np
-import matplotlib.pyplot as plt
 def main():
-    ct_image = np.load('Saved_DCM_Files\R_006\R_006_94.npy')
-    kmeans_segmentation(ct_image)
-    perform_cluster(ct_image)
+    ct_image_1 = np.load('Saved_NPY_Files\R_006\R_006_94.npy')
+    ct_image_2 = np.load('Saved_NPY_Files\R_004\R_004_45.npy')
+    kmeans_segmentation(ct_image_1)
+    perform_cluster(ct_image_1)
+    kmeans_segmentation(ct_image_2)
+    perform_cluster(ct_image_2)
 main()
