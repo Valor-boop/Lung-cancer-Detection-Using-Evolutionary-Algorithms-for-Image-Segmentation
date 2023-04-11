@@ -6,7 +6,6 @@ import os
 from sklearn.cluster import KMeans
 from skimage.io import imread, imsave
 from PIL import Image
-from KmeansTest import kmeans_segmentation 
 from preprocessing import depth_modification, linear_filters
 # Define the fitness function
 def fitness(image, thresholds):
@@ -75,8 +74,7 @@ def pso(image, num_particles, num_iterations):
 # pixel intensities 
 # what exactly is the tumor in the ct image 
 # promising images: 004_11 looks good
-def main():
-    ct_image = np.load('Saved_DCM_Files/R_006/R_006_94.npy')
+def perform_cluster(ct_image):
     ct_image = depth_modification(ct_image, 8)
     ct_image = ct_image.astype(np.uint8)    
     segmented_image = pso(ct_image, num_particles=50, num_iterations=100)
@@ -128,4 +126,3 @@ def main():
     plt.title("Tumor Detection")
     plt.axis("off")
     plt.show()
-main()
