@@ -1,18 +1,24 @@
+####################################################################################
+#   CISC455 Group 4
+#   Lung cancer Detection Using Evolutionary Algorithms for Image Segmentation
+#   Names: Patrick Bernhard, Pavel-Dumitru Cernelev, Ben Tomkinson
+#   Date: 4/11/2023
+#####################################################################################
 import numpy as np
 import matplotlib.pyplot as plt
 
 def depth_modification(image, depth):
-    """
-    Question 5.
+    '''
     The following function changes the depth of an inputed image represented by a numpy
     array to the value represented by the "depth" parameter.
 
-    Parameters:
-        image (numpy array) : An array representing an image
+    Args:
+        image (numpy.ndarray): An array representing an image
         depth (int) : A depth value the image will be changed to
+
     Returns:
-        new_depth_image (numpy array) : The image altered to have the new depth value
-    """
+        new_depth_image (numpy.ndarray): The image altered to have the new depth value
+    '''
     # Get max depth of image
     current_max = np.max(image)
     i = 1
@@ -27,6 +33,16 @@ def depth_modification(image, depth):
     return new_depth_image
 
 def linear_filters(image, filter):
+    '''
+    The following function applied a linear filter to a provided
+    image array and returns an array representing the filtered image.
+
+    Parameters:
+        image (numpy.ndarray): An array representing an image
+        filter (numpy.ndarray)): An n x n matrix representing a kernel for linear filtering
+    Returns:
+        filtered_image (numpy.ndarray): An image array with the same dimensions as img, but augmented with the provided filter
+    '''
     padding = len(filter) // 2
     padded_image = np.pad(image, padding, mode='constant', constant_values=0)
     filtered_image = np.copy(image)
@@ -38,9 +54,16 @@ def linear_filters(image, filter):
     return filtered_image
 
 def pre_process(image, depth):
-    # Assume the input matrix A
-    #image = np.load(file_path)
+    '''
+    Pre-process an input image by padding it with zeros, applying a 3x3 median filter to remove noise, and modifying its depth.
 
+    Args:
+        image (numpy.ndarray): A 2D numpy array representing the input image.
+        depth (int): The desired bit depth of the pre-processed image.
+
+    Returns:
+        image (numpy.ndarray): A 2D numpy array representing the pre-processed image with the desired bit depth.
+    '''
     # Construct a matrix with M+2 rows and N+2 columns by appending zeros
     M, N = image.shape
     A_padded = np.zeros((M+2, N+2))
