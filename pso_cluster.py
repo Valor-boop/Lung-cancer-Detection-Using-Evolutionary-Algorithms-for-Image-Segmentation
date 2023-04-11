@@ -1,21 +1,48 @@
+####################################################################################
+#   CISC455 Group 4
+#   Lung cancer Detection Using Evolutionary Algorithms for Image Segmentation
+#   Names: Patrick Bernhard, Pavel-Dumitru Cernelev, Ben Tomkinson
+#   Date: 4/11/2023
+#####################################################################################
 import numpy as np
 import matplotlib.pyplot as plt
 import cv2
-import glob
-import os 
 from sklearn.cluster import KMeans
-from skimage.io import imread, imsave
 from PIL import Image
-from preprocessing import depth_modification, linear_filters
-# Define the fitness function
+from sklearn.metrics import silhouette_score
+from matplotlib import patches
+
 def fitness(image, thresholds):
+    '''
+    Calculates the fitness score of an image based on the given thresholds.
+
+    Args:
+        image (numpy.ndarray): 2D numpy array, representing the input CT image
+        thresholds (list): A list of two integers representing the lower and upper threshold values.
+    
+    Returns:
+        fitness (float):  The fitness score of the image, calculated as the ratio of the number of pixels
+        with intensities within the threshold range to the total number of pixels in the image.
+    '''
     if np.isscalar(thresholds):
         thresholds = np.array([thresholds])
     mask = image > thresholds[:, np.newaxis, np.newaxis]
-    return np.sum(image * mask)
+    fitness = np.sum(image * mask)
+    return fitness
 
-# Define the PSO function
 def pso(image, num_particles, num_iterations):
+    """
+    Performs Particle Swarm Optimization (PSO) to segment an image using a threshold.
+
+    Args:
+        image (numpy.ndarray): 2D numpy array, representing the input CT image.
+        num_particles (int): The number of particles in the PSO algorithm.
+        num_iterations (int): The number of iterations to run the PSO algorithm.
+
+    Returns:
+        segmented_image (numpy.ndarray): A 2D numpy array representing the segmented image, where the pixels with intensities
+        greater than the threshold are set to 1 and the rest are set to 0.
+    """
     # Set the search space for the threshold value
     search_space = (0, 255)
     
@@ -46,7 +73,7 @@ def pso(image, num_particles, num_iterations):
         global_best_index = np.argmax(better_fitnesses)
         global_best_position = better_positions[global_best_index]
         global_best_fitness = better_fitnesses[global_best_index]
-        
+
         # Update the particles' velocities and positions
         cognitive_velocity = np.random.uniform(0, 1, size=num_particles) * (best_positions - positions)
         social_velocity = np.random.uniform(0, 1, size=num_particles) * (global_best_position - positions)
@@ -65,64 +92,74 @@ def pso(image, num_particles, num_iterations):
     
     return segmented_image
 
-# Load the CT image as a NumPy array
-# lets get this to iterate over all files within a folder nad then find the 
-# image that best displays a lung tumor in the patient
-# 35 gives good resutls 
-# after getting segmented image, any intesnity values > 0, turn to max intesity else turn to 0
-# want lungs to appear white, everything else black, isolate tumor based off of surrounding 
-# pixel intensities 
-# what exactly is the tumor in the ct image 
-# promising images: 004_11 looks good
 def perform_cluster(ct_image):
-    ct_image = depth_modification(ct_image, 8)
-    ct_image = ct_image.astype(np.uint8)    
-    segmented_image = pso(ct_image, num_particles=50, num_iterations=100)
+    """
+    Perform clustering on a CT image to extract the tumor.
+    
+    Args:
+        ct_image (numpy.ndarray): 2D numpy array, representing the input CT image.
+    
+    Returns: 
+        None
+    """
+    #ct_image = depth_modification(ct_image, 8)
+    ct_image_int_8 = ct_image.astype(np.uint8)
+    
+    # Perform PSO clustering
+    segmented_image = pso(ct_image_int_8, num_particles=50, num_iterations=50)
+    
+    # Convert the segmented image to a 1D array
+    pixels = segmented_image.reshape(-1, 1)
+    
+    # Perform KMeans clustering to get the labels of each pixel
+    n_clusters = 2  # set the number of clusters
+    kmeans = KMeans(n_clusters=n_clusters, random_state=0).fit(pixels)
+    labels = kmeans.labels_
+    
+    # Calculate the silhouette score
+    score = silhouette_score(pixels, labels)
+    print(f"PSO Silhouette score: {score}")
+    
+    # Threshold the image with the global best position
     threshold_value = 50
     ret, binary_img = cv2.threshold(segmented_image, threshold_value, 255, cv2.THRESH_BINARY)
     reversed_img = 255 - binary_img
-    for i in range(100):
-        reversed_img = cv2.medianBlur(reversed_img, 3)
     
     # Apply morphological operations to remove small objects and fill in holes
     kernel = np.ones((3,3),np.uint8)
-    closing = cv2.morphologyEx(ct_image, cv2.MORPH_CLOSE, kernel)
+    closing = cv2.morphologyEx(reversed_img, cv2.MORPH_CLOSE, kernel)
     opening = cv2.morphologyEx(closing, cv2.MORPH_OPEN, kernel)
 
     # Apply edge detection
-    edges = cv2.Canny(ct_image, 100, 200)
+    edges = cv2.Canny(ct_image_int_8, 100, 200)
 
     # Find contours
     contours, hierarchy = cv2.findContours(edges, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
-
     # Set minimum area for tumor contour
     min_area = 100
+    tumor_extract = np.copy(reversed_img)
 
     # Loop through contours and draw bounding box around tumor
     for cnt in contours:
         area = cv2.contourArea(cnt)
         if area > min_area:
             x, y, w, h = cv2.boundingRect(cnt)
-            cv2.rectangle(ct_image, (x, y), (x + w, y + h), (0, 255, 0), 2)
+            cv2.rectangle(tumor_extract, (x, y), (x + w, y + h), (0, 255, 0), 1)
 
-    file_name = os.path.basename('006_94')
-    fig = plt.figure()
-    fig.canvas.manager.window.title = file_name
-
-    plt.subplot(141)
-    plt.imshow(ct_image, cmap="gray")
-    plt.title(file_name)
-    plt.axis("off")
-    plt.subplot(142)
-    plt.imshow(binary_img, cmap="gray")
-    plt.title("Raw Image")
-    plt.axis("off")
-    plt.subplot(143)
-    plt.imshow(reversed_img, cmap="gray")
-    plt.title("Tumor Image")
-    plt.axis("off")
-    plt.subplot(144)
-    plt.imshow(ct_image, cmap="gray")
-    plt.title("Tumor Detection")
-    plt.axis("off")
+    fig, ax = plt.subplots(1, 4, figsize=(10, 5))
+    fig.suptitle("PSO Clustering")
+    ax[0].imshow(ct_image, cmap='gray')
+    ax[0].set_title('Original Image')
+    ax[1].imshow(binary_img, cmap='gray')
+    ax[1].set_title('Binary Image')
+    ax[2].imshow(reversed_img, cmap='gray')
+    ax[2].set_title("Reverse Binary Extraction")
+    ax[3].imshow(tumor_extract, cmap='gray')
+    ax[3].set_title("Tumor Extraction")
+    for cnt in contours:
+        area = cv2.contourArea(cnt)
+        if area > min_area:
+            x, y, w, h = cv2.boundingRect(cnt)
+            rect = patches.Rectangle((x, y), w, h, linewidth=1, edgecolor='r', facecolor='none')
+            ax[3].add_patch(rect)
     plt.show()
