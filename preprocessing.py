@@ -2,17 +2,6 @@ import numpy as np
 import matplotlib.pyplot as plt
 
 def depth_modification(image, depth):
-    """
-    Question 5.
-    The following function changes the depth of an inputed image represented by a numpy
-    array to the value represented by the "depth" parameter.
-
-    Parameters:
-        image (numpy array) : An array representing an image
-        depth (int) : A depth value the image will be changed to
-    Returns:
-        new_depth_image (numpy array) : The image altered to have the new depth value
-    """
     # Get max depth of image
     current_max = np.max(image)
     i = 1
